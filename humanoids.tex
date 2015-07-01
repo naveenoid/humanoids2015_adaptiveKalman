@@ -107,15 +107,50 @@ $$F_{k} = \frac{\partial f(x,\hat{w}_{k+1}^{-})}{\partial x}\bigg|_{\hat{x}_{k}^
 $$ C_{k} = \frac{\partial h(\hat{x}_{k+1}^{-})}{\partial w} = H_{k+1}\frac{\partial \hat{x}_{k+1}^{-}}{\partial w}\bigg|_{\hat{w}_{k+1}^{-}} $$
 \linebreak
 
-The linearisation associated with the Parameter filter is defined in sucha way because the state filter whose parameters are estimated by the parameter filter, has a recurrent architecture, i.e., $\hat{x}_{k+1}$ is a function of $\hat{x}_{k}$, and both are functions of w. Thus the linearisation must be computed using recurrent derivatives. The author specifies a routine similar to real-time recurrent learning for the linearisation., for further reading : look into [6]. 
+The linearisation associated with the Parameter filter is defined in such a way because the state filter whose parameters are estimated by the parameter filter, has a recurrent architecture, i.e., $\hat{x}_{k+1}$ is a function of $\hat{x}_{k}$, and both are functions of w. Thus the linearisation must be computed using recurrent derivatives. The author specifies a routine similar to real-time recurrent learning for the linearisation., for further reading : look into [6]. 
 %\subsection{JEKF}
 %The unknown parameters $w$ are considered as additional state variables, hence we have an augmented state vector,
 %$$z = [x^{T} \theta^{T}]^{T}$$
 %
 %$$ z_{k+1} = \begin{pmatrix}x_{k+1}\\\theta_{k+1}\end{pmatrix} = \begin{pmatrix}f(x_{k},u_{k},\theta_{k})\\\theta_{k}\end{pmatrix} + \begin{pmatrix}w_{k}\\\eta_{k}\end{pmatrix}$$
 
+\subsection{JEKF}
+
+\subsection{Proper computation of wrenches on the foot}
+
+Currently,we consider the leg as a single rigid body and assume the wrenches act at the COM of the whole leg, i.e., at the knee of the leg. But it would be interesting to considering the wrenches acting exclusively  on the foot for obtaining accurate estimates. Hence the following equations show the Newton-Euler equations for the wrenches acting on the foot:
 
 
+
+For this purpose we consider three link bodies $b_{0}$ : foot,  $b_{1}$ : lower leg , $b_{1}$ : upper leg.
+\linebreak
+\includegraphics[scale = 0.25]{legmodel}
+\linebreak
+Excuse me for the bad figure :P
+\linebreak
+Let's consider only the foot ,body $b_{0}$. The wrenches acting on the foot are the ground reaction wrenches due to contact $f_{c}$, wrenches from the  rest of the body $f_{o}$ and wrenches due to gravity. Hence ,
+
+$$ f_{o} - f_{c}  + I^{b_{0}}g^{b_{0}} = I^{b_{0}}a^{b_{0}} + v^{b_{0}}\times (I^{b_{0}}v^{b_{0}}) $$
+
+Similarly, the wrenches acting on the lower leg, body $b_{1}$ are $f_{o}$ and $f_{o}^{'}$ and those acting on the upper leg, body $b_{2}$ are $f_{o}^{'}$ and $f_{o}^{''}$.
+
+$$ f_{o}^{'} - f_{o}  + I^{b_{1}}g^{b_{1}} = I^{b_{1}}a^{b_{1}} + v^{b_{1}}\times (I^{b_{1}}v^{b_{1}}) $$
+
+$$ f_{o}^{''} - f_{o}^{'}  + I^{b_{2}}g^{b_{2}} = I^{b_{2}}a^{b_{2}} + v^{b_{2}}\times (I^{b_{2}}v^{b_{2}}) $$
+
+This has a recursive structure, and hence can easily be obtained using the RNEA algorithm, which is applicable for articulated structures as well.
+
+Hence, from the above equations, we obtain, 
+
+$$ f_{o}^{''} - f_{c} + \sum_{i=1}^{3} I^{b_{i}}g^{b_{i}} = \sum_{i=1}^{3} I^{b_{i}}a^{b_{i}} + v^{b_{i}}\times (I^{b_{i}}v^{b_{i}})$$
+
+The forces $f_{o}^{''}$ and $f_{c}$ are measured from the FT sensors located at the hip and the ankle respectively, and are associated with the sensor frames $S_{o}$ and $S_{c}$.
+
+When expressed in the foot frame,
+$$ X^{b_{o}*}_{S_{o}} f_{o}^{''} - X^{b_{o}*}_{S_{c}} f_{c} + X^{b_{o}*}_{b_{i}} \sum_{i=1}^{3} I^{b_{i}}g^{b_{i}} = X^{b_{o}*}_{b_{i}} \sum_{i=1}^{3} I^{b_{i}}a^{b_{i}} + v^{b_{i}}\times (I^{b_{i}}v^{b_{i}})$$
+
+
+In the implementation point of view, the transformation and inertia matrices can be obtained using mexWholebody model and urdf of the robots. We need to figure a way to determine the link velocities, accelerations and the gravities acting on the links.
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
